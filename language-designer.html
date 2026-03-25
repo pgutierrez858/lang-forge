@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangForge — Diseñador de Lenguajes</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --surface: #111318;
+    --surface2: #1a1d26;
+    --surface3: #222635;
+    --border: #2a2f45;
+    --border-bright: #3d4460;
+    --accent: #6ee7b7;
+    --accent2: #818cf8;
+    --accent3: #f472b6;
+    --accent4: #fbbf24;
+    --text: #e2e8f0;
+    --text-dim: #7b88a8;
+    --text-dimmer: #4a5270;
+    --danger: #f87171;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --radius: 8px;
+    --radius-lg: 14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999; opacity: 0.4;
+  }
+
+  /* ───── HEADER ───── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo-mark {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 14px; font-weight: 700;
+    color: #0a0b0f;
+  }
+  .logo-text { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+  .logo-text span { color: var(--accent); }
+
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius);
+    font-family: var(--mono); font-size: 0.78rem; font-weight: 700;
+    cursor: pointer; border: none; transition: all 0.2s;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .btn-ghost {
+    background: transparent; color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--border-bright); color: var(--text); }
+  .btn-primary {
+    background: var(--accent); color: #0a0b0f;
+  }
+  .btn-primary:hover { background: #4ade80; transform: translateY(-1px); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: white; }
+  .btn-sm { padding: 5px 11px; font-size: 0.7rem; }
+  .btn-accent2 { background: var(--accent2); color: white; }
+  .btn-accent2:hover { background: #a5b4fc; color: #0a0b0f; }
+
+  /* ───── LAYOUT ───── */
+  .app-layout {
+    display: flex; height: calc(100vh - 65px);
+  }
+
+  /* ───── SIDEBAR NAV ───── */
+  .sidebar {
+    width: 220px; min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 24px 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-section-label {
+    font-family: var(--mono); font-size: 0.62rem;
+    color: var(--text-dimmer); text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 0 20px 8px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px;
+    cursor: pointer; transition: all 0.15s;
+    font-size: 0.88rem; font-weight: 600;
+    color: var(--text-dim);
+    border-left: 2px solid transparent;
+    position: relative;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(110,231,183,0.05);
+  }
+  .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--surface3); color: var(--text-dim);
+    font-family: var(--mono); font-size: 0.65rem;
+    padding: 1px 6px; border-radius: 999px;
+  }
+  .nav-item.active .nav-badge { background: rgba(110,231,183,0.15); color: var(--accent); }
+
+  .sidebar-divider { height: 1px; background: var(--border); margin: 12px 20px; }
+
+  /* ───── MAIN CONTENT ───── */
+  .main-content {
+    flex: 1; overflow-y: auto;
+    padding: 32px 36px;
+    background: var(--bg);
+  }
+
+  .section-header {
+    margin-bottom: 28px;
+  }
+  .section-header h2 {
+    font-size: 1.5rem; font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-header p {
+    color: var(--text-dim); font-size: 0.88rem;
+    margin-top: 6px; line-height: 1.6;
+    font-family: var(--mono);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ───── CARDS ───── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .card-header:hover { background: var(--surface2); }
+
+  .card-header-left {
+    display: flex; align-items: center; gap: 12px;
+    flex: 1; min-width: 0;
+  }
+
+  .card-label {
+    font-size: 0.9rem; font-weight: 600; color: var(--text);
+  }
+  .card-desc {
+    font-family: var(--mono); font-size: 0.72rem;
+    color: var(--text-dim); margin-top: 2px;
+  }
+
+  .token-badge {
+    font-family: var(--mono); font-size: 0.78rem;
+    padding: 3px 10px; border-radius: 6px;
+    background: var(--surface3); border: 1px solid var(--border);
+    color: var(--accent); white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .token-badge.custom { color: var(--accent3); border-color: rgba(244,114,182,0.3); }
+  .token-badge.default { color: var(--accent2); }
+
+  .chevron { color: var(--text-dimmer); transition: transform 0.2s; font-size: 0.8rem; }
+  .card.open .chevron { transform: rotate(90deg); }
+
+  .card-body {
+    display: none;
+    padding: 18px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .card.open .card-body { display: block; }
+
+  /* ───── INPUTS ───── */
+  .form-group { margin-bottom: 16px; }
+  .form-group:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-family: var(--mono); font-size: 0.72rem;
+    color: var(--text-dim); margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.07em;
+  }
+
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono); font-size: 0.84rem;
+    padding: 9px 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(129,140,248,0.15);
+  }
+
+  textarea { resize: vertical; min-height: 90px; }
+
+  .input-row { display: flex; gap: 12px; }
+  .input-row .form-group { flex: 1; }
+
+  select option { background: var(--surface3); }
+
+  .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .radio-pill input { display: none; }
+  .radio-pill label {
+    padding: 6px 14px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface3);
+    cursor: pointer; color: var(--text-dim);
+    font-family: var(--mono); font-size: 0.75rem;
+    text-transform: none; letter-spacing: 0;
+    margin: 0; display: inline-block;
+    transition: all 0.15s;
+  }
+  .radio-pill input:checked + label {
+    background: rgba(129,140,248,0.15);
+    border-color: var(--accent2); color: var(--accent2);
+  }
+  .radio-pill label:hover { border-color: var(--border-bright); color: var(--text); }
+
+  .checkbox-label {
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; font-family: var(--mono); font-size: 0.78rem;
+    color: var(--text-dim); text-transform: none; letter-spacing: 0;
+    margin-bottom: 0;
+  }
+  input[type="checkbox"] {
+    width: 16px; height: 16px; flex-shrink: 0;
+    accent-color: var(--accent2);
+    cursor: pointer;
+  }
+
+  /* ───── KEYWORD INLINE EDITOR ───── */
+  .kw-inline {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 18px 14px;
+  }
+  .kw-inline input { flex: 1; }
+  .kw-reset { font-family: var(--mono); font-size: 0.7rem; color: var(--text-dimmer); cursor: pointer; }
+  .kw-reset:hover { color: var(--accent3); }
+
+  /* ───── ADD NEW FORM ───── */
+  .add-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-top: 16px;
+    animation: slideDown 0.2s ease;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .add-form h3 {
+    font-size: 0.95rem; font-weight: 700;
+    margin-bottom: 18px; color: var(--accent);
+    font-family: var(--mono);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ───── OPERATOR TYPES TABLE ───── */
+  .operands-table { width: 100%; border-collapse: collapse; }
+  .operands-table th {
+    font-family: var(--mono); font-size: 0.65rem;
+    color: var(--text-dimmer); text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 6px 8px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .operands-table td { padding: 6px 8px; }
+  .operands-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+
+  .type-chip {
+    font-family: var(--mono); font-size: 0.72rem;
+    padding: 3px 8px; border-radius: 5px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface3);
+    color: var(--text-dim); transition: all 0.15s;
+  }
+  .type-chip.selected-int { background: rgba(251,191,36,0.15); border-color: var(--accent4); color: var(--accent4); }
+  .type-chip.selected-bool { background: rgba(244,114,182,0.15); border-color: var(--accent3); color: var(--accent3); }
+  .type-chip.selected-float { background: rgba(129,140,248,0.15); border-color: var(--accent2); color: var(--accent2); }
+  .type-chip.selected-string { background: rgba(110,231,183,0.15); border-color: var(--accent); color: var(--accent); }
+
+  /* ───── SYNTAX BUILDER ───── */
+  .syntax-builder {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .syntax-tokens {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    min-height: 36px; align-items: center;
+  }
+  .syntax-token {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 6px;
+    font-family: var(--mono); font-size: 0.78rem;
+    border: 1px solid var(--border);
+    background: var(--surface3); color: var(--text);
+  }
+  .syntax-token.token-keyword { border-color: var(--accent2); color: var(--accent2); background: rgba(129,140,248,0.1); }
+  .syntax-token.token-expr { border-color: var(--accent3); color: var(--accent3); background: rgba(244,114,182,0.1); }
+  .syntax-token.token-list { border-color: var(--accent4); color: var(--accent4); background: rgba(251,191,36,0.1); }
+  .syntax-token.token-block { border-color: var(--accent); color: var(--accent); background: rgba(110,231,183,0.1); }
+  .syntax-token .remove-tok { cursor: pointer; opacity: 0.5; font-size: 0.7rem; }
+  .syntax-token .remove-tok:hover { opacity: 1; color: var(--danger); }
+
+  .syntax-add-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .syntax-btn {
+    font-family: var(--mono); font-size: 0.7rem;
+    padding: 4px 10px; border-radius: 5px; cursor: pointer;
+    border: 1px dashed var(--border); background: transparent;
+    color: var(--text-dim); transition: all 0.15s;
+  }
+  .syntax-btn:hover { border-style: solid; }
+  .syntax-btn.add-kw:hover { border-color: var(--accent2); color: var(--accent2); }
+  .syntax-btn.add-expr:hover { border-color: var(--accent3); color: var(--accent3); }
+  .syntax-btn.add-list:hover { border-color: var(--accent4); color: var(--accent4); }
+  .syntax-btn.add-block:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ───── ITEMS LIST ───── */
+  .items-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .item-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .item-card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+  }
+  .item-card-header .item-name {
+    font-family: var(--mono); font-size: 0.88rem;
+    color: var(--accent); font-weight: 700; flex: 1;
+  }
+  .item-card-header .item-meta {
+    font-family: var(--mono); font-size: 0.7rem; color: var(--text-dim);
+  }
+  .item-card-body {
+    border-top: 1px solid var(--border);
+    padding: 14px 16px;
+    background: var(--surface2);
+  }
+  .item-prop {
+    display: flex; gap: 10px; align-items: baseline;
+    font-family: var(--mono); font-size: 0.75rem;
+    color: var(--text-dim); margin-bottom: 6px;
+  }
+  .item-prop .prop-key { color: var(--text-dimmer); min-width: 90px; }
+  .item-prop .prop-val { color: var(--text); }
+
+  /* ───── ADDABLE PILLS ───── */
+  .pill-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px;
+    font-family: var(--mono); font-size: 0.72rem;
+    background: var(--surface3); border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .pill.active {
+    background: rgba(110,231,183,0.12); border-color: var(--accent); color: var(--accent);
+  }
+
+  /* ───── JSON PREVIEW ───── */
+  .json-preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .json-preview-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .json-preview-header span {
+    font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim);
+  }
+  pre {
+    padding: 20px;
+    font-family: var(--mono); font-size: 0.78rem;
+    line-height: 1.7;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .json-key { color: var(--accent2); }
+  .json-str { color: var(--accent); }
+  .json-num { color: var(--accent4); }
+  .json-bool { color: var(--accent3); }
+  .json-null { color: var(--text-dimmer); }
+
+  /* ───── EMPTY STATE ───── */
+  .empty-state {
+    text-align: center; padding: 36px 20px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text-dimmer); font-family: var(--mono); font-size: 0.82rem;
+  }
+  .empty-state .empty-icon { font-size: 2rem; margin-bottom: 10px; }
+
+  /* ───── INFO BOX ───── */
+  .info-box {
+    background: rgba(129,140,248,0.08);
+    border: 1px solid rgba(129,140,248,0.25);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-family: var(--mono); font-size: 0.78rem;
+    color: var(--text-dim); line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .info-box strong { color: var(--accent2); }
+
+  /* ───── PROGRESS DOTS ───── */
+  .progress-bar {
+    display: flex; gap: 6px; align-items: center;
+    padding: 14px 32px 0;
+  }
+  .prog-step {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 0.7rem;
+    color: var(--text-dimmer);
+    cursor: pointer; transition: color 0.2s;
+  }
+  .prog-step.active { color: var(--accent); }
+  .prog-step.done { color: var(--text-dim); }
+  .prog-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--surface3); border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .prog-step.active .prog-dot { background: var(--accent); border-color: var(--accent); }
+  .prog-step.done .prog-dot { background: var(--accent2); border-color: var(--accent2); }
+  .prog-line { flex: 1; height: 1px; background: var(--border); max-width: 30px; }
+
+  /* ───── SCROLLBAR ───── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+  /* ───── MODAL ───── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    z-index: 200; display: none; align-items: center; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 16px;
+    padding: 28px;
+    width: min(90vw, 480px);
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: scaleIn 0.2s ease;
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ───── TOAST ───── */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--surface2); border: 1px solid var(--border-bright);
+    border-radius: 10px; padding: 12px 18px;
+    font-family: var(--mono); font-size: 0.78rem;
+    animation: toastIn 0.3s ease;
+    display: flex; align-items: center; gap: 10px;
+    max-width: 340px;
+  }
+  .toast.success { border-color: var(--accent); }
+  .toast.error { border-color: var(--danger); }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">{ }</div>
+    <div class="logo-text">Lang<span>Forge</span></div>
+  </div>
+  <div style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dimmer);">
+    Diseñador de lenguajes de programación
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="resetAll()">↺ Resetear</button>
+    <button class="btn btn-primary" onclick="generateJSON()">⬇ Exportar JSON</button>
+  </div>
+</header>
+
+<!-- PROGRESS -->
+<div class="progress-bar">
+  <div class="prog-step active" id="prog-0" onclick="switchTab('meta')">
+    <div class="prog-dot"></div> Meta
+  </div>
+  <div class="prog-line"></div>
+  <div class="prog-step" id="prog-1" onclick="switchTab('keywords')">
+    <div class="prog-dot"></div> Palabras clave
+  </div>
+  <div class="prog-line"></div>
+  <div class="prog-step" id="prog-2" onclick="switchTab('expressions')">
+    <div class="prog-dot"></div> Expresiones
+  </div>
+  <div class="prog-line"></div>
+  <div class="prog-step" id="prog-3" onclick="switchTab('instructions')">
+    <div class="prog-dot"></div> Instrucciones
+  </div>
+  <div class="prog-line"></div>
+  <div class="prog-step" id="prog-4" onclick="switchTab('export')">
+    <div class="prog-dot"></div> Exportar
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section-label">Secciones</div>
+    <div class="nav-item active" data-tab="meta" onclick="switchTab('meta')">
+      <span class="nav-icon">◈</span> Info del lenguaje
+    </div>
+    <div class="nav-item" data-tab="keywords" onclick="switchTab('keywords')">
+      <span class="nav-icon">⌘</span> Palabras clave
+      <span class="nav-badge" id="badge-kw">0</span>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="nav-item" data-tab="expressions" onclick="switchTab('expressions')">
+      <span class="nav-icon">⊕</span> Expresiones
+      <span class="nav-badge" id="badge-expr">0</span>
+    </div>
+    <div class="nav-item" data-tab="instructions" onclick="switchTab('instructions')">
+      <span class="nav-icon">▶</span> Instrucciones
+      <span class="nav-badge" id="badge-instr">0</span>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="nav-item" data-tab="export" onclick="switchTab('export')">
+      <span class="nav-icon">⬡</span> Vista JSON
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- ── TAB: META ── -->
+    <div id="tab-meta" class="tab-panel active">
+      <div class="section-header">
+        <h2>◈ Información del lenguaje</h2>
+        <p>Cuéntanos lo básico de tu nuevo lenguaje antes de entrar en detalles.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:700px;">
+        <div class="form-group">
+          <label>Nombre del lenguaje</label>
+          <input type="text" id="lang-name" placeholder="MiLenguaje" oninput="updateMeta()">
+        </div>
+        <div class="form-group">
+          <label>Versión</label>
+          <input type="text" id="lang-version" placeholder="1.0.0" oninput="updateMeta()">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Descripción</label>
+          <textarea id="lang-desc" rows="2" placeholder="Un lenguaje pensado para..." oninput="updateMeta()"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Autor</label>
+          <input type="text" id="lang-author" placeholder="Tu nombre" oninput="updateMeta()">
+        </div>
+        <div class="form-group">
+          <label>Paradigma principal</label>
+          <select id="lang-paradigm" onchange="updateMeta()">
+            <option value="imperativo">Imperativo</option>
+            <option value="funcional">Funcional</option>
+            <option value="orientado_objetos">Orientado a Objetos</option>
+            <option value="declarativo">Declarativo</option>
+            <option value="mixto">Mixto / Multi-paradigma</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sensible a mayúsculas</label>
+          <select id="lang-casesensitive" onchange="updateMeta()">
+            <option value="true">Sí (case-sensitive)</option>
+            <option value="false">No (case-insensitive)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Separador de instrucciones</label>
+          <input type="text" id="lang-sep" placeholder=";" oninput="updateMeta()">
+        </div>
+        <div class="form-group">
+          <label>Prefijo de comentario de línea</label>
+          <input type="text" id="lang-comment" placeholder="//" oninput="updateMeta()">
+        </div>
+      </div>
+      <div style="margin-top:24px;">
+        <button class="btn btn-accent2" onclick="switchTab('keywords')">Siguiente: Palabras clave →</button>
+      </div>
+    </div>
+
+    <!-- ── TAB: KEYWORDS ── -->
+    <div id="tab-keywords" class="tab-panel">
+      <div class="section-header">
+        <h2>⌘ Palabras clave</h2>
+        <p>Estas son las instrucciones predefinidas. Puedes renombrarlas o dejar la que viene por defecto.</p>
+      </div>
+      <div class="info-box">
+        <strong>Tip:</strong> haz clic en cualquier tarjeta para editar su nombre en tu lenguaje. Si lo dejas en blanco, se usará el valor por defecto.
+      </div>
+      <div id="keywords-list"></div>
+    </div>
+
+    <!-- ── TAB: EXPRESSIONS ── -->
+    <div id="tab-expressions" class="tab-panel">
+      <div class="section-header">
+        <h2>⊕ Operadores y expresiones</h2>
+        <p>Define las expresiones y operadores de tu lenguaje: prioridad, asociatividad, tipos...</p>
+      </div>
+
+      <div class="info-box">
+        Los operadores <strong>por defecto</strong> ya están precargados. Puedes modificarlos o añadir nuevos.
+      </div>
+
+      <div class="items-list" id="expr-list"></div>
+
+      <button class="btn btn-accent2" style="margin-top:16px;" onclick="openAddExprModal()">+ Nueva expresión / operador</button>
+    </div>
+
+    <!-- ── TAB: INSTRUCTIONS ── -->
+    <div id="tab-instructions" class="tab-panel">
+      <div class="section-header">
+        <h2>▶ Instrucciones</h2>
+        <p>Define cómo se escriben las instrucciones de control, bucles y estructuras propias.</p>
+      </div>
+      <div class="info-box">
+        Usa el <strong>constructor de sintaxis</strong> para definir cómo se escribe cada instrucción. Puedes insertar tokens de tipo <span style="color:var(--accent2)">Keyword</span>, <span style="color:var(--accent3)">Expresión</span>, <span style="color:var(--accent4)">Lista</span> y <span style="color:var(--accent)">Bloque</span>.
+      </div>
+      <div class="items-list" id="instr-list"></div>
+      <button class="btn btn-accent2" style="margin-top:16px;" onclick="openAddInstrModal()">+ Nueva instrucción</button>
+    </div>
+
+    <!-- ── TAB: EXPORT ── -->
+    <div id="tab-export" class="tab-panel">
+      <div class="section-header">
+        <h2>⬡ Vista previa JSON</h2>
+        <p>Este es el JSON generado con tu lenguaje. Cópialo o descárgalo para usarlo con tu compilador.</p>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <button class="btn btn-primary" onclick="generateJSON()">⬇ Descargar JSON</button>
+        <button class="btn btn-ghost" onclick="copyJSON()">⧉ Copiar al portapapeles</button>
+      </div>
+      <div class="json-preview">
+        <div class="json-preview-header">
+          <span id="json-filename">mi-lenguaje.langforge.json</span>
+          <span id="json-size">— bytes</span>
+        </div>
+        <pre id="json-output">// Pulsa "Exportar JSON" para generar</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── MODAL: ADD EXPRESSION ── -->
+<div class="modal-backdrop" id="modal-expr">
+  <div class="modal">
+    <h3>✦ <span id="modal-expr-title">Nueva expresión / operador</span></h3>
+
+    <div class="form-group">
+      <label>Nombre / símbolo del operador</label>
+      <input type="text" id="expr-name" placeholder="ej: +, and, not, ??">
+    </div>
+
+    <div class="form-group">
+      <label>Descripción (para el usuario)</label>
+      <input type="text" id="expr-desc" placeholder="ej: Suma dos valores enteros">
+    </div>
+
+    <div class="input-row">
+      <div class="form-group">
+        <label>Prioridad (mayor = antes)</label>
+        <input type="number" id="expr-priority" placeholder="10" min="0" max="999">
+      </div>
+      <div class="form-group">
+        <label>Número de operandos</label>
+        <select id="expr-arity">
+          <option value="1">1 (unario)</option>
+          <option value="2" selected>2 (binario)</option>
+          <option value="3">3 (ternario)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Posición del operador</label>
+      <div class="radio-group" id="expr-fixity-group">
+        <div class="radio-pill"><input type="radio" name="fixity" id="fix-infix" value="infix" checked><label for="fix-infix">Infijo (a OP b)</label></div>
+        <div class="radio-pill"><input type="radio" name="fixity" id="fix-prefix" value="prefix"><label for="fix-prefix">Prefijo (OP a)</label></div>
+        <div class="radio-pill"><input type="radio" name="fixity" id="fix-postfix" value="postfix"><label for="fix-postfix">Posfijo (a OP)</label></div>
+      </div>
+    </div>
+
+    <div class="form-group" id="assoc-group">
+      <label>Asociatividad</label>
+      <div class="radio-group">
+        <div class="radio-pill"><input type="radio" name="assoc" id="assoc-left" value="left" checked><label for="assoc-left">Por la izquierda</label></div>
+        <div class="radio-pill"><input type="radio" name="assoc" id="assoc-right" value="right"><label for="assoc-right">Por la derecha</label></div>
+        <div class="radio-pill"><input type="radio" name="assoc" id="assoc-none" value="none"><label for="assoc-none">No asociativo</label></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Tipos de los operandos y retorno</label>
+      <div id="operand-types-container"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Tipo de retorno</label>
+      <div class="radio-group" id="return-type-group">
+        <div class="radio-pill"><input type="radio" name="rettype" id="ret-int" value="int" checked><label for="ret-int">Int</label></div>
+        <div class="radio-pill"><input type="radio" name="rettype" id="ret-bool" value="bool"><label for="ret-bool">Bool</label></div>
+        <div class="radio-pill"><input type="radio" name="rettype" id="ret-float" value="float"><label for="ret-float">Float</label></div>
+        <div class="radio-pill"><input type="radio" name="rettype" id="ret-string" value="string"><label for="ret-string">String</label></div>
+        <div class="radio-pill"><input type="radio" name="rettype" id="ret-any" value="any"><label for="ret-any">Cualquiera</label></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Ejecución / semántica <span style="color:var(--text-dimmer)">(texto libre, o código, o descripción para IA)</span></label>
+      <textarea id="expr-execution" rows="3" placeholder="Describe cómo se ejecuta esta expresión..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-expr')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveExpression()">Guardar expresión</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: ADD INSTRUCTION ── -->
+<div class="modal-backdrop" id="modal-instr">
+  <div class="modal">
+    <h3>▶ <span id="modal-instr-title">Nueva instrucción</span></h3>
+
+    <div class="form-group">
+      <label>Nombre de la instrucción</label>
+      <input type="text" id="instr-name" placeholder="ej: MiIf, Mientras, Repetir">
+    </div>
+
+    <div class="form-group">
+      <label>Descripción</label>
+      <input type="text" id="instr-desc" placeholder="ej: Ejecuta un bloque si la condición es cierta">
+    </div>
+
+    <div class="form-group">
+      <label>Sintaxis — constructor visual</label>
+      <div class="syntax-builder" id="syntax-builder">
+        <div class="syntax-tokens" id="syntax-tokens">
+          <span style="color:var(--text-dimmer);font-family:var(--mono);font-size:0.75rem">Usa los botones de abajo para construir la sintaxis →</span>
+        </div>
+        <div class="syntax-add-row">
+          <button class="syntax-btn add-kw" onclick="addSyntaxToken('keyword')">+ Keyword</button>
+          <button class="syntax-btn add-expr" onclick="addSyntaxToken('expr')">+ Expresión</button>
+          <button class="syntax-btn add-list" onclick="addSyntaxToken('list')">+ Lista instrucciones</button>
+          <button class="syntax-btn add-block" onclick="addSyntaxToken('block')">{ Bloque }</button>
+          <button class="syntax-btn" onclick="addSyntaxToken('literal')" style="border-color:var(--border)">+ Literal</button>
+          <button class="syntax-btn" onclick="clearSyntax()" style="color:var(--danger);border-color:rgba(248,113,113,0.3);">✕ Limpiar</button>
+        </div>
+      </div>
+      <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-dimmer);margin-top:4px;">
+        Vista: <span id="syntax-preview" style="color:var(--text-dim)">—</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Restricciones de tipos en expresiones <span style="color:var(--text-dimmer)">(opcional)</span></label>
+      <textarea id="instr-constraints" rows="2" placeholder="ej: La condición del if debe ser de tipo Bool"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Ejecución / semántica <span style="color:var(--text-dimmer)">(texto libre)</span></label>
+      <textarea id="instr-execution" rows="3" placeholder="Describe cómo se ejecuta esta instrucción..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-instr')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveInstruction()">Guardar instrucción</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+const state = {
+  meta: { name:'', version:'1.0.0', description:'', author:'', paradigm:'imperativo', caseSensitive: true, separator:';', commentPrefix:'//' },
+  keywords: [],
+  expressions: [],
+  instructions: []
+};
+
+// Editing indexes
+let editingExprIdx = -1;
+let editingInstrIdx = -1;
+let syntaxTokens = [];
+
+/* ═══════════════════════════════════════════════════════
+   DEFAULT KEYWORDS
+═══════════════════════════════════════════════════════ */
+const DEFAULT_KEYWORDS = [
+  { id:'print',    default:'print',   label:'Imprimir un valor por pantalla',            category:'io' },
+  { id:'input',    default:'input',   label:'Leer un valor de la entrada estándar',       category:'io' },
+  { id:'if',       default:'if',      label:'Si una condición es cierta, ejecuta un bloque', category:'control' },
+  { id:'else',     default:'else',    label:'Bloque alternativo al if',                  category:'control' },
+  { id:'elseif',   default:'elseif',  label:'Condición adicional encadenada al if',      category:'control' },
+  { id:'while',    default:'while',   label:'Repite un bloque mientras la condición sea cierta', category:'control' },
+  { id:'for',      default:'for',     label:'Bucle con variable de control',             category:'control' },
+  { id:'foreach',  default:'foreach', label:'Itera sobre una colección',                 category:'control' },
+  { id:'break',    default:'break',   label:'Sale del bucle actual',                     category:'control' },
+  { id:'continue', default:'continue',label:'Pasa a la siguiente iteración del bucle',  category:'control' },
+  { id:'return',   default:'return',  label:'Devuelve un valor desde una función',       category:'functions' },
+  { id:'function', default:'function',label:'Define una función o procedimiento',        category:'functions' },
+  { id:'let',      default:'let',     label:'Declara una variable',                      category:'variables' },
+  { id:'const',    default:'const',   label:'Declara una constante (inmutable)',         category:'variables' },
+  { id:'true',     default:'true',    label:'Valor booleano verdadero',                  category:'literals' },
+  { id:'false',    default:'false',   label:'Valor booleano falso',                      category:'literals' },
+  { id:'null',     default:'null',    label:'Valor nulo o ausencia de valor',            category:'literals' },
+  { id:'and',      default:'and',     label:'Conjunción lógica (Y)',                     category:'logic' },
+  { id:'or',       default:'or',      label:'Disyunción lógica (O)',                     category:'logic' },
+  { id:'not',      default:'not',     label:'Negación lógica',                           category:'logic' },
+  { id:'in',       default:'in',      label:'Comprueba si un elemento pertenece a una colección', category:'logic' },
+  { id:'class',    default:'class',   label:'Define una clase (si el lenguaje es OO)',   category:'oop' },
+  { id:'new',      default:'new',     label:'Crea una instancia de una clase',           category:'oop' },
+  { id:'this',     default:'this',    label:'Referencia al objeto actual',               category:'oop' },
+  { id:'import',   default:'import',  label:'Importa un módulo o fichero',               category:'modules' },
+];
+
+const CATEGORY_LABELS = { control:'Control de flujo', io:'Entrada/Salida', functions:'Funciones', variables:'Variables', literals:'Literales', logic:'Lógica', oop:'Orientado a Objetos', modules:'Módulos' };
+
+/* ═══════════════════════════════════════════════════════
+   DEFAULT EXPRESSIONS
+═══════════════════════════════════════════════════════ */
+const DEFAULT_EXPRESSIONS = [
+  { name:'+',  desc:'Suma', priority:60, arity:2, fixity:'infix', assoc:'left',  operandTypes:['int','int'], returnType:'int', execution:'Suma aritmética de los dos operandos', isDefault:true },
+  { name:'-',  desc:'Resta', priority:60, arity:2, fixity:'infix', assoc:'left', operandTypes:['int','int'], returnType:'int', execution:'Resta aritmética', isDefault:true },
+  { name:'*',  desc:'Multiplicación', priority:70, arity:2, fixity:'infix', assoc:'left', operandTypes:['int','int'], returnType:'int', execution:'Producto aritmético', isDefault:true },
+  { name:'/',  desc:'División', priority:70, arity:2, fixity:'infix', assoc:'left', operandTypes:['int','int'], returnType:'int', execution:'División aritmética (entera si ambos operandos son int)', isDefault:true },
+  { name:'%',  desc:'Módulo / Resto', priority:70, arity:2, fixity:'infix', assoc:'left', operandTypes:['int','int'], returnType:'int', execution:'Resto de la división entera', isDefault:true },
+  { name:'==', desc:'Igualdad', priority:40, arity:2, fixity:'infix', assoc:'none', operandTypes:['any','any'], returnType:'bool', execution:'Compara si los dos operandos son iguales', isDefault:true },
+  { name:'!=', desc:'Desigualdad', priority:40, arity:2, fixity:'infix', assoc:'none', operandTypes:['any','any'], returnType:'bool', execution:'Compara si los dos operandos son distintos', isDefault:true },
+  { name:'<',  desc:'Menor que', priority:50, arity:2, fixity:'infix', assoc:'none', operandTypes:['int','int'], returnType:'bool', execution:'Compara si el primero es menor que el segundo', isDefault:true },
+  { name:'>',  desc:'Mayor que', priority:50, arity:2, fixity:'infix', assoc:'none', operandTypes:['int','int'], returnType:'bool', execution:'Compara si el primero es mayor que el segundo', isDefault:true },
+  { name:'<=', desc:'Menor o igual', priority:50, arity:2, fixity:'infix', assoc:'none', operandTypes:['int','int'], returnType:'bool', execution:'Menor o igual que', isDefault:true },
+  { name:'>=', desc:'Mayor o igual', priority:50, arity:2, fixity:'infix', assoc:'none', operandTypes:['int','int'], returnType:'bool', execution:'Mayor o igual que', isDefault:true },
+  { name:'-',  desc:'Negación aritmética (unario)', priority:80, arity:1, fixity:'prefix', assoc:'none', operandTypes:['int'], returnType:'int', execution:'Negación unaria', isDefault:true },
+];
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+function init() {
+  // Populate keywords from defaults
+  state.keywords = DEFAULT_KEYWORDS.map(k => ({ ...k, custom: '' }));
+  state.expressions = DEFAULT_EXPRESSIONS.map(e => ({ ...e }));
+  state.instructions = [];
+
+  renderKeywords();
+  renderExpressions();
+  renderInstructions();
+  updateBadges();
+}
+
+/* ═══════════════════════════════════════════════════════
+   TAB NAVIGATION
+═══════════════════════════════════════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+
+  const tabs = ['meta','keywords','expressions','instructions','export'];
+  tabs.forEach((t, i) => {
+    const el = document.getElementById('prog-' + i);
+    el.classList.remove('active','done');
+    const idx = tabs.indexOf(tab);
+    if (i === idx) el.classList.add('active');
+    else if (i < idx) el.classList.add('done');
+  });
+
+  if (tab === 'export') refreshJSONPreview();
+}
+
+/* ═══════════════════════════════════════════════════════
+   META
+═══════════════════════════════════════════════════════ */
+function updateMeta() {
+  state.meta.name = document.getElementById('lang-name').value;
+  state.meta.version = document.getElementById('lang-version').value;
+  state.meta.description = document.getElementById('lang-desc').value;
+  state.meta.author = document.getElementById('lang-author').value;
+  state.meta.paradigm = document.getElementById('lang-paradigm').value;
+  state.meta.caseSensitive = document.getElementById('lang-casesensitive').value === 'true';
+  state.meta.separator = document.getElementById('lang-sep').value;
+  state.meta.commentPrefix = document.getElementById('lang-comment').value;
+  document.getElementById('json-filename').textContent = (state.meta.name || 'mi-lenguaje').toLowerCase().replace(/\s+/g,'-') + '.langforge.json';
+}
+
+/* ═══════════════════════════════════════════════════════
+   KEYWORDS
+═══════════════════════════════════════════════════════ */
+function renderKeywords() {
+  const container = document.getElementById('keywords-list');
+  const groups = {};
+  state.keywords.forEach(k => { if(!groups[k.category]) groups[k.category]=[]; groups[k.category].push(k); });
+
+  container.innerHTML = Object.entries(groups).map(([cat, kws]) => `
+    <div style="margin-bottom:20px;">
+      <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-dimmer);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">
+        ${CATEGORY_LABELS[cat] || cat}
+      </div>
+      ${kws.map(k => renderKeywordCard(k)).join('')}
+    </div>
+  `).join('');
+  updateBadges();
+}
+
+function renderKeywordCard(kw) {
+  const val = kw.custom || kw.default;
+  const isCustom = !!kw.custom;
+  return `
+    <div class="card" id="kw-card-${kw.id}">
+      <div class="card-header" onclick="toggleCard('kw-card-${kw.id}')">
+        <div class="card-header-left">
+          <div>
+            <div class="card-label">${kw.label}</div>
+          </div>
+        </div>
+        <span class="token-badge ${isCustom ? 'custom' : 'default'}">${val}</span>
+        <span class="chevron" style="margin-left:10px;">›</span>
+      </div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:10px;">
+          <label>Nombre en tu lenguaje <span style="color:var(--text-dimmer)">(deja vacío para usar el por defecto: "${kw.default}")</span></label>
+          <input type="text" value="${kw.custom}" placeholder="${kw.default}"
+            oninput="updateKeyword('${kw.id}', this.value)"
+            style="font-family:var(--mono);font-weight:700;">
+        </div>
+        ${kw.custom ? `<button class="btn btn-ghost btn-sm" onclick="updateKeyword('${kw.id}','');document.querySelector('#kw-card-${kw.id} input').value='';renderKeywords()">↺ Restaurar defecto</button>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function updateKeyword(id, val) {
+  const kw = state.keywords.find(k => k.id === id);
+  if (kw) {
+    kw.custom = val.trim();
+    // Update badge color without full re-render
+    const badge = document.querySelector(`#kw-card-${id} .token-badge`);
+    if (badge) {
+      badge.textContent = val.trim() || kw.default;
+      badge.className = 'token-badge ' + (val.trim() ? 'custom' : 'default');
+    }
+    updateBadges();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   EXPRESSIONS
+═══════════════════════════════════════════════════════ */
+function renderExpressions() {
+  const list = document.getElementById('expr-list');
+  if (!state.expressions.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">⊕</div>No hay expresiones aún.</div>`;
+    return;
+  }
+  list.innerHTML = state.expressions.map((e, i) => `
+    <div class="item-card">
+      <div class="item-card-header">
+        <span class="item-name">${escHtml(e.name)}</span>
+        <span class="item-meta">${e.fixity} · prio ${e.priority} · ${e.arity} operando${e.arity>1?'s':''}</span>
+        ${e.isDefault ? '<span class="token-badge default">default</span>' : '<span class="token-badge custom">custom</span>'}
+        <button class="btn btn-ghost btn-sm" onclick="editExpr(${i})">✎ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="removeExpr(${i})">✕</button>
+      </div>
+      <div class="item-card-body">
+        <div class="item-prop"><span class="prop-key">descripción</span><span class="prop-val">${escHtml(e.desc)}</span></div>
+        <div class="item-prop"><span class="prop-key">asociatividad</span><span class="prop-val">${e.assoc}</span></div>
+        <div class="item-prop"><span class="prop-key">operandos</span><span class="prop-val">${(e.operandTypes||[]).join(', ')}</span></div>
+        <div class="item-prop"><span class="prop-key">retorno</span><span class="prop-val">${e.returnType}</span></div>
+        ${e.execution ? `<div class="item-prop"><span class="prop-key">ejecución</span><span class="prop-val" style="opacity:0.7">${escHtml(e.execution.substring(0,80))}${e.execution.length>80?'…':''}</span></div>` : ''}
+      </div>
+    </div>
+  `).join('');
+  updateBadges();
+}
+
+function openAddExprModal(idx=-1) {
+  editingExprIdx = idx;
+  const modal = document.getElementById('modal-expr');
+  const e = idx >= 0 ? state.expressions[idx] : null;
+
+  document.getElementById('modal-expr-title').textContent = idx>=0 ? 'Editar expresión' : 'Nueva expresión / operador';
+  document.getElementById('expr-name').value = e?.name || '';
+  document.getElementById('expr-desc').value = e?.desc || '';
+  document.getElementById('expr-priority').value = e?.priority ?? 50;
+  document.getElementById('expr-arity').value = e?.arity ?? 2;
+  document.getElementById('expr-execution').value = e?.execution || '';
+
+  // fixity
+  document.querySelectorAll('input[name="fixity"]').forEach(r => r.checked = r.value === (e?.fixity || 'infix'));
+  // assoc
+  document.querySelectorAll('input[name="assoc"]').forEach(r => r.checked = r.value === (e?.assoc || 'left'));
+  // return type
+  document.querySelectorAll('input[name="rettype"]').forEach(r => r.checked = r.value === (e?.returnType || 'int'));
+
+  updateOperandTypeUI(e?.arity || 2, e?.operandTypes);
+  document.getElementById('expr-arity').onchange = () => updateOperandTypeUI(+document.getElementById('expr-arity').value);
+
+  modal.classList.add('open');
+}
+
+function updateOperandTypeUI(arity, existing=[]) {
+  const types = ['int','bool','float','string','any'];
+  const container = document.getElementById('operand-types-container');
+  container.innerHTML = Array.from({length: arity}, (_, i) => `
+    <div style="margin-bottom:8px;">
+      <label style="margin-bottom:4px;">Operando ${i+1}</label>
+      <div class="radio-group">
+        ${types.map(t => `
+          <div class="radio-pill">
+            <input type="radio" name="optype-${i}" id="optype-${i}-${t}" value="${t}" ${(existing[i]||'int')===t?'checked':''}>
+            <label for="optype-${i}-${t}">${t}</label>
+          </div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveExpression() {
+  const name = document.getElementById('expr-name').value.trim();
+  if (!name) { toast('El operador necesita un nombre/símbolo', 'error'); return; }
+
+  const arity = +document.getElementById('expr-arity').value;
+  const operandTypes = Array.from({length: arity}, (_,i) => {
+    const checked = document.querySelector(`input[name="optype-${i}"]:checked`);
+    return checked ? checked.value : 'any';
+  });
+
+  const expr = {
+    name,
+    desc: document.getElementById('expr-desc').value.trim(),
+    priority: +document.getElementById('expr-priority').value || 50,
+    arity,
+    fixity: document.querySelector('input[name="fixity"]:checked')?.value || 'infix',
+    assoc: document.querySelector('input[name="assoc"]:checked')?.value || 'left',
+    operandTypes,
+    returnType: document.querySelector('input[name="rettype"]:checked')?.value || 'int',
+    execution: document.getElementById('expr-execution').value.trim(),
+    isDefault: false
+  };
+
+  if (editingExprIdx >= 0) {
+    state.expressions[editingExprIdx] = { ...state.expressions[editingExprIdx], ...expr };
+    toast('Expresión actualizada ✓', 'success');
+  } else {
+    state.expressions.push(expr);
+    toast('Expresión añadida ✓', 'success');
+  }
+
+  closeModal('modal-expr');
+  renderExpressions();
+}
+
+function editExpr(i) { openAddExprModal(i); }
+function removeExpr(i) {
+  if (confirm('¿Eliminar esta expresión?')) {
+    state.expressions.splice(i, 1);
+    renderExpressions();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   INSTRUCTIONS
+═══════════════════════════════════════════════════════ */
+function renderInstructions() {
+  const list = document.getElementById('instr-list');
+  if (!state.instructions.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">▶</div>Aún no has definido instrucciones.<br>Pulsa el botón de abajo para añadir la primera.</div>`;
+    return;
+  }
+  list.innerHTML = state.instructions.map((ins, i) => `
+    <div class="item-card">
+      <div class="item-card-header">
+        <span class="item-name">${escHtml(ins.name)}</span>
+        <span class="item-meta" style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim);">${renderSyntaxString(ins.syntax)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="editInstr(${i})">✎ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="removeInstr(${i})">✕</button>
+      </div>
+      <div class="item-card-body">
+        <div class="item-prop"><span class="prop-key">descripción</span><span class="prop-val">${escHtml(ins.desc||'—')}</span></div>
+        ${ins.constraints ? `<div class="item-prop"><span class="prop-key">restricciones</span><span class="prop-val">${escHtml(ins.constraints)}</span></div>` : ''}
+        ${ins.execution ? `<div class="item-prop"><span class="prop-key">ejecución</span><span class="prop-val" style="opacity:0.7">${escHtml(ins.execution.substring(0,80))}${ins.execution.length>80?'…':''}</span></div>` : ''}
+      </div>
+    </div>
+  `).join('');
+  updateBadges();
+}
+
+function openAddInstrModal(idx=-1) {
+  editingInstrIdx = idx;
+  const modal = document.getElementById('modal-instr');
+  const ins = idx >= 0 ? state.instructions[idx] : null;
+
+  document.getElementById('modal-instr-title').textContent = idx>=0 ? 'Editar instrucción' : 'Nueva instrucción';
+  document.getElementById('instr-name').value = ins?.name || '';
+  document.getElementById('instr-desc').value = ins?.desc || '';
+  document.getElementById('instr-constraints').value = ins?.constraints || '';
+  document.getElementById('instr-execution').value = ins?.execution || '';
+
+  syntaxTokens = ins?.syntax ? JSON.parse(JSON.stringify(ins.syntax)) : [];
+  renderSyntaxBuilder();
+
+  modal.classList.add('open');
+}
+
+function saveInstruction() {
+  const name = document.getElementById('instr-name').value.trim();
+  if (!name) { toast('La instrucción necesita un nombre', 'error'); return; }
+
+  const ins = {
+    name,
+    desc: document.getElementById('instr-desc').value.trim(),
+    syntax: JSON.parse(JSON.stringify(syntaxTokens)),
+    constraints: document.getElementById('instr-constraints').value.trim(),
+    execution: document.getElementById('instr-execution').value.trim()
+  };
+
+  if (editingInstrIdx >= 0) {
+    state.instructions[editingInstrIdx] = ins;
+    toast('Instrucción actualizada ✓', 'success');
+  } else {
+    state.instructions.push(ins);
+    toast('Instrucción añadida ✓', 'success');
+  }
+
+  closeModal('modal-instr');
+  renderInstructions();
+}
+
+function editInstr(i) { openAddInstrModal(i); }
+function removeInstr(i) {
+  if (confirm('¿Eliminar esta instrucción?')) {
+    state.instructions.splice(i, 1);
+    renderInstructions();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SYNTAX BUILDER
+═══════════════════════════════════════════════════════ */
+const TOKEN_TYPES = {
+  keyword: { label:'KW', cls:'token-keyword', prompt:'Escribe el keyword o símbolo:' },
+  expr:    { label:'Expr', cls:'token-expr', prompt:'Nombre de la expresión (ej: Condicion):' },
+  list:    { label:'Lista', cls:'token-list', prompt:'Nombre de la lista (ej: Instrucciones):' },
+  block:   { label:'Bloque', cls:'token-block', prompt:null },
+  literal: { label:'…', cls:'', prompt:'Escribe el literal (ej: (, ), ,, :):' }
+};
+
+function addSyntaxToken(type) {
+  const def = TOKEN_TYPES[type];
+  let value = '';
+
+  if (def.prompt) {
+    value = prompt(def.prompt, '');
+    if (value === null) return;
+    value = value.trim();
+    if (!value) return;
+  } else {
+    // block
+    value = '{ ... }';
+  }
+
+  syntaxTokens.push({ type, value });
+  renderSyntaxBuilder();
+}
+
+function removeSyntaxToken(i) {
+  syntaxTokens.splice(i, 1);
+  renderSyntaxBuilder();
+}
+
+function clearSyntax() {
+  syntaxTokens = [];
+  renderSyntaxBuilder();
+}
+
+function renderSyntaxBuilder() {
+  const container = document.getElementById('syntax-tokens');
+  if (!syntaxTokens.length) {
+    container.innerHTML = `<span style="color:var(--text-dimmer);font-family:var(--mono);font-size:0.75rem">Usa los botones de abajo para construir la sintaxis →</span>`;
+  } else {
+    container.innerHTML = syntaxTokens.map((t,i) => {
+      const cls = TOKEN_TYPES[t.type]?.cls || '';
+      return `<span class="syntax-token ${cls}">${escHtml(t.value)}<span class="remove-tok" onclick="removeSyntaxToken(${i})">✕</span></span>`;
+    }).join('');
+  }
+  document.getElementById('syntax-preview').textContent = renderSyntaxString(syntaxTokens);
+}
+
+function renderSyntaxString(tokens) {
+  if (!tokens || !tokens.length) return '—';
+  return tokens.map(t => {
+    if (t.type === 'expr') return `[Expr:${t.value}]`;
+    if (t.type === 'list') return `[${t.value}]`;
+    if (t.type === 'block') return `{ ... }`;
+    return t.value;
+  }).join(' ');
+}
+
+/* ═══════════════════════════════════════════════════════
+   JSON EXPORT
+═══════════════════════════════════════════════════════ */
+function buildJSON() {
+  const kwMap = {};
+  state.keywords.forEach(k => {
+    kwMap[k.id] = { default: k.default, custom: k.custom || null, label: k.label, category: k.category };
+  });
+
+  return {
+    langforge_version: '1.0',
+    meta: state.meta,
+    keywords: kwMap,
+    expressions: state.expressions.map(e => ({ ...e })),
+    instructions: state.instructions.map(i => ({ ...i }))
+  };
+}
+
+function refreshJSONPreview() {
+  const json = buildJSON();
+  const str = JSON.stringify(json, null, 2);
+  document.getElementById('json-output').innerHTML = syntaxHighlightJSON(str);
+  document.getElementById('json-size').textContent = new Blob([str]).size + ' bytes';
+}
+
+function syntaxHighlightJSON(str) {
+  return str
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+\.?\d*([eE][+-]?\d+)?)/g, m => {
+      if (/^"/.test(m)) {
+        if (/:$/.test(m)) return `<span class="json-key">${m}</span>`;
+        return `<span class="json-str">${m}</span>`;
+      }
+      if (/true|false/.test(m)) return `<span class="json-bool">${m}</span>`;
+      if (/null/.test(m)) return `<span class="json-null">${m}</span>`;
+      return `<span class="json-num">${m}</span>`;
+    });
+}
+
+function generateJSON() {
+  const json = buildJSON();
+  const str = JSON.stringify(json, null, 2);
+  const name = (state.meta.name || 'mi-lenguaje').toLowerCase().replace(/\s+/g,'-');
+  const blob = new Blob([str], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name + '.langforge.json';
+  a.click(); URL.revokeObjectURL(url);
+  toast('JSON descargado ✓', 'success');
+  switchTab('export');
+}
+
+function copyJSON() {
+  const str = JSON.stringify(buildJSON(), null, 2);
+  navigator.clipboard.writeText(str).then(() => toast('Copiado al portapapeles ✓', 'success'));
+}
+
+/* ═══════════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════════ */
+function toggleCard(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updateBadges() {
+  document.getElementById('badge-kw').textContent = state.keywords.filter(k=>k.custom).length + '/' + state.keywords.length;
+  document.getElementById('badge-expr').textContent = state.expressions.length;
+  document.getElementById('badge-instr').textContent = state.instructions.length;
+}
+
+function resetAll() {
+  if (!confirm('¿Resetear todo el proyecto? Se perderán los cambios.')) return;
+  document.getElementById('lang-name').value = '';
+  document.getElementById('lang-version').value = '1.0.0';
+  document.getElementById('lang-desc').value = '';
+  document.getElementById('lang-author').value = '';
+  document.getElementById('lang-sep').value = ';';
+  document.getElementById('lang-comment').value = '//';
+  updateMeta();
+  init();
+  toast('Proyecto reseteado', 'success');
+}
+
+function toast(msg, type='success') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${type==='success'?'✓':'✕'}</span> ${escHtml(msg)}`;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(20px)'; el.style.transition='all 0.3s'; setTimeout(()=>el.remove(),300); }, 2500);
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-backdrop').forEach(b => {
+  b.addEventListener('click', e => { if (e.target === b) b.classList.remove('open'); });
+});
+
+init();
+</script>
+</body>
+</html>
