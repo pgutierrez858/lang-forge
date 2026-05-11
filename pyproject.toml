@@ -9,13 +9,3 @@ dependencies = [
     "pydantic>=2.0.0",
     "ollama>=0.3.0",
 ]
-
-[project.scripts]
-langforge = "server:app"
-
-[tool.uv]
-dev-dependencies = []
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
