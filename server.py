@@ -65,6 +65,9 @@ Strict rules:
 4. The code must ONLY contain the body of: public Integer execute() { ... }
 5. Do NOT include markdown, explanations, or the method signature.
 6. Return ONLY valid JSON: {"java_code": "..."}
+7. In case the return is a bool YOU MUST CONVERT IT TO AN INT. You can use the following:
+    return result ? 1 : 0;
+    where result is the computed expression
 
 Examples:
 User: Return the maximum between the first expression and the second
@@ -87,6 +90,9 @@ Strict rules:
 2. The code must ONLY contain the body of: public Integer execute() { ... }
 3. Do NOT include markdown, explanations, or the method signature.
 4. Return ONLY valid JSON: {"java_code": "..."}
+5. In case the return is a bool YOU MUST CONVERT IT TO AN INT. You can use the following:
+    return result ? 1 : 0;
+    where result is the computed expression
 
 Examples:
 User: Return the absolute value of the expression
